@@ -1,4 +1,4 @@
--- -- CREATE THE DATABASE
+-- CREATE THE DATABASE
 
 CREATE DATABASE [9:15_Group1];
 GO
@@ -125,7 +125,7 @@ CREATE SEQUENCE PkSequence.[SalesManagersSequenceObject]
  MAXVALUE 2147483647
 GO
 
--- for replacing identity key in DbSecurity.[UserAuthorization]
+-- for automatically assigning keys in [DbSecurity].[UserAuthorization]
 CREATE SEQUENCE PkSequence.[UserAuthorizationSequenceObject] 
  AS [int]
  START WITH 1
@@ -156,7 +156,7 @@ GO
 -- Create date: default
 -- Description:	Code taken from the 'Script as Create' result of the scalar-Valued Function within the BIClass db
 -- =============================================
-create FUNCTION [Utils].[CalculateDataTypeByteStorage] 
+CREATE FUNCTION [Utils].[CalculateDataTypeByteStorage] 
 (
 	-- Add the parameters for the function here
 	@DataType varchar(50)
@@ -383,7 +383,97 @@ CREATE TABLE [DbSecurity].[UserAuthorization]
 GO
 
 
--- Fact Table -- 
+-- OriginallyLoadedData Table -- 
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE FileUpload.[OriginallyLoadedData]
+(
+    [SalesKey] [int] NOT NULL,
+    [ProductCategory] [varchar](20) NULL,
+    [ProductSubcategory] [varchar](20) NULL,
+    [SalesManager] [varchar](20) NULL,
+    [ProductCode] [varchar](10) NULL,
+    [ProductName] [varchar](40) NULL,
+    [Color] [varchar](10) NULL,
+    [ModelName] [varchar](30) NULL,
+    [OrderQuantity] [int] NULL,
+    [UnitPrice] [money] NULL,
+    [ProductStandardCost] [money] NULL,
+    [SalesAmount] [money] NULL,
+    [OrderDate] [date] NULL,
+    [MonthName] [varchar](10) NULL,
+    [MonthNumber] [int] NULL,
+    [Year] [int] NULL,
+    [CustomerName] [varchar](30) NULL,
+    [MaritalStatus] [char](1) NULL,
+    [Gender] [char](1) NULL,
+    [Education] [varchar](20) NULL,
+    [Occupation] [varchar](20) NULL,
+    [TerritoryRegion] [varchar](20) NULL,
+    [TerritoryCountry] [varchar](20) NULL,
+    [TerritoryGroup] [varchar](20) NULL
+) ON [PRIMARY]
+GO
+
+
+-- Migrate the data from the BiClass DB to our group DB
+INSERT INTO [9:15_Group1].[FileUpload].[OriginallyLoadedData]
+    ([SalesKey], [ProductCategory], [ProductSubcategory], [SalesManager], [ProductCode],
+    [ProductName], [Color], [ModelName], [OrderQuantity], [UnitPrice],
+    [ProductStandardCost], [SalesAmount], [OrderDate], [MonthName], [MonthNumber],
+    [Year], [CustomerName], [MaritalStatus], [Gender], [Education],
+    [Occupation], [TerritoryRegion], [TerritoryCountry], [TerritoryGroup])
+SELECT
+    [SalesKey], [ProductCategory], [ProductSubcategory], [SalesManager], [ProductCode],
+    [ProductName], [Color], [ModelName], [OrderQuantity], [UnitPrice],
+    [ProductStandardCost], [SalesAmount], [OrderDate], [MonthName], [MonthNumber],
+    [Year], [CustomerName], [MaritalStatus], [Gender], [Education],
+    [Occupation], [TerritoryRegion], [TerritoryCountry], [TerritoryGroup]
+FROM [BIClass].[FileUpload].[OriginallyLoadedData];
+
+
+
+/*
+Table: [Fact].[Data]
+
+Description:
+This table serves as the central fact table for the sales data warehouse. It contains transactional 
+data including sales details, product information, and customer information. The table is designed 
+to integrate with various dimension tables in a star schema setup, allowing for complex analytical 
+queries and reporting.
+
+Columns:
+[SalesKey] - The primary key for the table, uniquely identifying each sales transaction.
+[SalesManagerKey] - Foreign key reference to the SalesManagers dimension table.
+[OccupationKey] - Foreign key reference to the Occupation dimension table.
+[TerritoryKey] - Foreign key reference to the Territory dimension table.
+[ProductKey] - Foreign key reference to the Product dimension table.
+[CustomerKey] - Foreign key reference to the Customer dimension table.
+[ProductCategory], [SalesManager], [ProductSubcategory], ... - Descriptive attributes of the sale.
+[UserAuthorizationKey] - Foreign key reference to the UserAuthorization table, used for tracking and auditing which users are responsible for the transaction records.
+[DateAdded] - The date and time when the record was added to the table.
+[DateOfLastUpdate] - The date and time when the record was last updated.
+
+Foreign Key Relationships:
+[FK_Data_DimCustomer] - Links to the Customer dimension.
+[FK_Data_DimGender] - Links to the Gender dimension.
+[FK_Data_DimMaritalStatus] - Links to the Marital Status dimension.
+[FK_Data_DimOccupation] - Links to the Occupation dimension.
+[FK_Data_DimOrderDate] - Links to the Order Date dimension.
+[FK_Data_DimProduct] - Links to the Product dimension.
+[FK_Data_DimTerritory] - Links to the Territory dimension.
+[FK_Data_SalesManagers] - Links to the Sales Managers dimension.
+[FK_Data_UserAuthorization] - Links to the User Authorization tracking table.
+
+Usage:
+This table is populated through ETL processes that extract sales data from operational systems. 
+It is used for generating reports, performing sales trend analysis, and measuring performance 
+indicators across different dimensions such as time, product, and sales territory.
+
+*/
 
 SET ANSI_NULLS ON
 GO
@@ -644,7 +734,38 @@ AS
     FROM [CH01-01-Dimension].[DimOrderDate] 
 GO
 
--- DimProduct Table -- 
+
+/*
+Table: [CH01-01-Dimension].[DimProduct]
+
+Description:
+This dimension table stores the master data related to products. It includes descriptive details of each product, 
+such as category, subcategory, code, name, color, and model name. This table supports the star schema design by 
+providing context to the sales transactions recorded in the fact table, allowing for more detailed analysis and 
+reporting on product-related dimensions.
+
+Columns:
+[ProductKey] - The primary key for the table, uniquely identifying each product.
+[ProductSubcategoryKey] - A foreign key that links to the product subcategory dimension table.
+[ProductCategory] - A descriptive attribute specifying the category of the product.
+[ProductSubcategory] - A descriptive attribute specifying the subcategory of the product.
+[ProductCode] - A unique code assigned to the product.
+[ProductName] - The name of the product.
+[Color] - The color of the product.
+[ModelName] - The model name of the product.
+[UserAuthorizationKey] - A foreign key linking to the UserAuthorization table to track which user is responsible for the product record.
+[DateAdded] - The date and time when the product record was added to the table.
+[DateOfLastUpdate] - The date and time when the product record was last updated.
+
+Foreign Key Relationships:
+[FK_DimProduct_DimProductSubCategory] - Links to the Product Subcategory dimension to provide a hierarchical relationship within the product dimension.
+[FK_DimProduct_UserAuthorization] - Links to the User Authorization table for tracking the user who has added or last updated the product record.
+
+Usage:
+The table is populated and updated through administrative processes where product information is managed. 
+It is used in conjunction with the fact table to enable detailed product-level analysis and reporting in a business intelligence context.
+
+*/
 
 SET ANSI_NULLS ON
 GO
@@ -831,41 +952,6 @@ AS
 GO
 
 
--- OriginallyLoadedData Table -- 
-
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE FileUpload.[OriginallyLoadedData]
-(
-    [SalesKey] [int] NOT NULL,
-    [ProductCategory] [varchar](20) NULL,
-    [ProductSubcategory] [varchar](20) NULL,
-    [SalesManager] [varchar](20) NULL,
-    [ProductCode] [varchar](10) NULL,
-    [ProductName] [varchar](40) NULL,
-    [Color] [varchar](10) NULL,
-    [ModelName] [varchar](30) NULL,
-    [OrderQuantity] [int] NULL,
-    [UnitPrice] [money] NULL,
-    [ProductStandardCost] [money] NULL,
-    [SalesAmount] [money] NULL,
-    [OrderDate] [date] NULL,
-    [MonthName] [varchar](10) NULL,
-    [MonthNumber] [int] NULL,
-    [Year] [int] NULL,
-    [CustomerName] [varchar](30) NULL,
-    [MaritalStatus] [char](1) NULL,
-    [Gender] [char](1) NULL,
-    [Education] [varchar](20) NULL,
-    [Occupation] [varchar](20) NULL,
-    [TerritoryRegion] [varchar](20) NULL,
-    [TerritoryCountry] [varchar](20) NULL,
-    [TerritoryGroup] [varchar](20) NULL
-) ON [PRIMARY]
-GO
-
 -- ProductCategories Table
 
 SET ANSI_NULLS ON
@@ -890,9 +976,30 @@ CREATE TABLE FileUpload.[ProductSubcategories]
 ) ON [PRIMARY]
 GO
 
+/*
 
---------------------- Workflow Steps -------------------------
+Table: Process.[WorkflowSteps]
 
+Description:
+This table is used for auditing and tracking the execution of various workflow steps within the system. 
+It records key information about each workflow step, including a description, the number of rows affected, 
+the start and end times of the step, and the user who executed the step.
+
+Columns:
+[WorkFlowStepKey] - The primary key for the table, uniquely identifying each workflow step.
+[WorkFlowStepDescription] - A descriptive name or summary of the workflow step.
+[WorkFlowStepTableRowCount] - The number of table rows that were affected or processed during the workflow step.
+[StartingDateTime] - The date and time when the workflow step began.
+[EndingDateTime] - The date and time when the workflow step ended.
+[Class Time] - An optional field that could be used to record the time of a class or session during which the workflow step was executed.
+[UserAuthorizationKey] - A foreign key linking to the UserAuthorization table to identify the user responsible for the workflow step.
+
+Usage:
+This table is populated by the 'usp_TrackWorkFlow' stored procedure, which is called at the beginning and end 
+of each workflow step to log its execution. It can be used for monitoring system activity, analyzing the performance 
+and duration of workflow steps, and ensuring that data processing is carried out by authorized users.
+
+*/
 
 SET ANSI_NULLS ON
 GO
@@ -977,15 +1084,15 @@ ALTER TABLE Fact.[Data] ADD  DEFAULT (sysdatetime()) FOR [DateAdded]
 GO
 ALTER TABLE Fact.[Data] ADD  DEFAULT (sysdatetime()) FOR [DateOfLastUpdate]
 GO
-ALTER TABLE DbSecurity.[UserAuthorization] ADD  DEFAULT (NEXT VALUE FOR PkSequence.[UserAuthorizationSequenceObject]) FOR [UserAuthorizationKey]
+ALTER TABLE [DbSecurity].[UserAuthorization] ADD  DEFAULT (NEXT VALUE FOR PkSequence.[UserAuthorizationSequenceObject]) FOR [UserAuthorizationKey]
 GO
-ALTER TABLE DbSecurity.[UserAuthorization] ADD  DEFAULT ('9:15') FOR [ClassTime]
+ALTER TABLE [DbSecurity].[UserAuthorization] ADD  DEFAULT ('9:15') FOR [ClassTime]
 GO
-ALTER TABLE DbSecurity.[UserAuthorization] ADD  DEFAULT ('PROJECT 2 RECREATE THE BICLASS DATABASE STAR SCHEMA') FOR [IndividualProject]
+ALTER TABLE [DbSecurity].[UserAuthorization] ADD  DEFAULT ('PROJECT 2 RECREATE THE BICLASS DATABASE STAR SCHEMA') FOR [IndividualProject]
 GO
-ALTER TABLE DbSecurity.[UserAuthorization] ADD  DEFAULT ('GROUP 1') FOR [GroupName]
+ALTER TABLE [DbSecurity].[UserAuthorization] ADD  DEFAULT ('GROUP 1') FOR [GroupName]
 GO
-ALTER TABLE DbSecurity.[UserAuthorization] ADD  DEFAULT (sysdatetime()) FOR [DateAdded]
+ALTER TABLE [DbSecurity].[UserAuthorization] ADD  DEFAULT (sysdatetime()) FOR [DateAdded]
 GO
 ALTER TABLE Process.[WorkflowSteps] ADD  DEFAULT (NEXT VALUE FOR PkSequence.[WorkFlowStepsSequenceObject]) FOR [WorkFlowStepKey]
 GO
@@ -998,27 +1105,27 @@ GO
 ALTER TABLE Process.[WorkflowSteps] ADD  DEFAULT ('9:15') FOR [Class Time]
 GO
 ALTER TABLE [CH01-01-Dimension].[DimCustomer]  WITH CHECK ADD  CONSTRAINT [FK_DimCustomer_UserAuthorization] FOREIGN KEY([UserAuthorizationKey])
-REFERENCES DbSecurity.[UserAuthorization] ([UserAuthorizationKey])
+REFERENCES [DbSecurity].[UserAuthorization] ([UserAuthorizationKey])
 GO
 ALTER TABLE [CH01-01-Dimension].[DimCustomer] CHECK CONSTRAINT [FK_DimCustomer_UserAuthorization]
 GO
 ALTER TABLE [CH01-01-Dimension].[DimGender]  WITH CHECK ADD  CONSTRAINT [FK_DimGender_UserAuthorization] FOREIGN KEY([UserAuthorizationKey])
-REFERENCES DbSecurity.[UserAuthorization] ([UserAuthorizationKey])
+REFERENCES [DbSecurity].[UserAuthorization] ([UserAuthorizationKey])
 GO
 ALTER TABLE [CH01-01-Dimension].[DimGender] CHECK CONSTRAINT [FK_DimGender_UserAuthorization]
 GO
 ALTER TABLE [CH01-01-Dimension].[DimMaritalStatus]  WITH CHECK ADD  CONSTRAINT [FK_DimMaritalStatus_UserAuthorization] FOREIGN KEY([UserAuthorizationKey])
-REFERENCES DbSecurity.[UserAuthorization] ([UserAuthorizationKey])
+REFERENCES [DbSecurity].[UserAuthorization] ([UserAuthorizationKey])
 GO
 ALTER TABLE [CH01-01-Dimension].[DimMaritalStatus] CHECK CONSTRAINT [FK_DimMaritalStatus_UserAuthorization]
 GO
 ALTER TABLE [CH01-01-Dimension].[DimOccupation]  WITH CHECK ADD  CONSTRAINT [FK_DimOccupation_UserAuthorization] FOREIGN KEY([UserAuthorizationKey])
-REFERENCES DbSecurity.[UserAuthorization] ([UserAuthorizationKey])
+REFERENCES [DbSecurity].[UserAuthorization] ([UserAuthorizationKey])
 GO
 ALTER TABLE [CH01-01-Dimension].[DimOccupation] CHECK CONSTRAINT [FK_DimOccupation_UserAuthorization]
 GO
 ALTER TABLE [CH01-01-Dimension].[DimOrderDate]  WITH CHECK ADD  CONSTRAINT [FK_DimOrderDate_UserAuthorization] FOREIGN KEY([UserAuthorizationKey])
-REFERENCES DbSecurity.[UserAuthorization] ([UserAuthorizationKey])
+REFERENCES [DbSecurity].[UserAuthorization] ([UserAuthorizationKey])
 GO
 ALTER TABLE [CH01-01-Dimension].[DimOrderDate] CHECK CONSTRAINT [FK_DimOrderDate_UserAuthorization]
 GO
@@ -1028,12 +1135,12 @@ GO
 ALTER TABLE [CH01-01-Dimension].[DimProduct] CHECK CONSTRAINT [FK_DimProduct_DimProductSubCategory]
 GO
 ALTER TABLE [CH01-01-Dimension].[DimProduct]  WITH CHECK ADD  CONSTRAINT [FK_DimProduct_UserAuthorization] FOREIGN KEY([UserAuthorizationKey])
-REFERENCES DbSecurity.[UserAuthorization] ([UserAuthorizationKey])
+REFERENCES [DbSecurity].[UserAuthorization] ([UserAuthorizationKey])
 GO
 ALTER TABLE [CH01-01-Dimension].[DimProduct] CHECK CONSTRAINT [FK_DimProduct_UserAuthorization]
 GO
 ALTER TABLE [CH01-01-Dimension].[DimProductCategory]  WITH CHECK ADD  CONSTRAINT [FK_DimProductCategory_UserAuthorization] FOREIGN KEY([UserAuthorizationKey])
-REFERENCES DbSecurity.[UserAuthorization] ([UserAuthorizationKey])
+REFERENCES [DbSecurity].[UserAuthorization] ([UserAuthorizationKey])
 GO
 ALTER TABLE [CH01-01-Dimension].[DimProductCategory] CHECK CONSTRAINT [FK_DimProductCategory_UserAuthorization]
 GO
@@ -1043,17 +1150,17 @@ GO
 ALTER TABLE [CH01-01-Dimension].[DimProductSubCategory] CHECK CONSTRAINT [FK_DimProductSubCategory_DimProductCategory]
 GO
 ALTER TABLE [CH01-01-Dimension].[DimProductSubCategory]  WITH CHECK ADD  CONSTRAINT [FK_DimProductSubCategory_UserAuthorization] FOREIGN KEY([UserAuthorizationKey])
-REFERENCES DbSecurity.[UserAuthorization] ([UserAuthorizationKey])
+REFERENCES [DbSecurity].[UserAuthorization] ([UserAuthorizationKey])
 GO
 ALTER TABLE [CH01-01-Dimension].[DimProductSubCategory] CHECK CONSTRAINT [FK_DimProductSubCategory_UserAuthorization]
 GO
 ALTER TABLE [CH01-01-Dimension].[DimTerritory]  WITH CHECK ADD  CONSTRAINT [FK_DimTerritory_UserAuthorization] FOREIGN KEY([UserAuthorizationKey])
-REFERENCES DbSecurity.[UserAuthorization] ([UserAuthorizationKey])
+REFERENCES [DbSecurity].[UserAuthorization] ([UserAuthorizationKey])
 GO
 ALTER TABLE [CH01-01-Dimension].[DimTerritory] CHECK CONSTRAINT [FK_DimTerritory_UserAuthorization]
 GO
 ALTER TABLE [CH01-01-Dimension].[SalesManagers]  WITH CHECK ADD  CONSTRAINT [FK_SalesManagers_UserAuthorization] FOREIGN KEY([UserAuthorizationKey])
-REFERENCES DbSecurity.[UserAuthorization] ([UserAuthorizationKey])
+REFERENCES [DbSecurity].[UserAuthorization] ([UserAuthorizationKey])
 GO
 ALTER TABLE [CH01-01-Dimension].[SalesManagers] CHECK CONSTRAINT [FK_SalesManagers_UserAuthorization]
 GO
@@ -1098,12 +1205,12 @@ GO
 ALTER TABLE Fact.[Data] CHECK CONSTRAINT [FK_Data_SalesManagers]
 GO
 ALTER TABLE Fact.[Data]  WITH CHECK ADD  CONSTRAINT [FK_Data_UserAuthorization] FOREIGN KEY([UserAuthorizationKey])
-REFERENCES DbSecurity.[UserAuthorization] ([UserAuthorizationKey])
+REFERENCES [DbSecurity].[UserAuthorization] ([UserAuthorizationKey])
 GO
 ALTER TABLE Fact.[Data] CHECK CONSTRAINT [FK_Data_UserAuthorization]
 GO
 ALTER TABLE Process.[WorkflowSteps]  WITH CHECK ADD  CONSTRAINT [FK_WorkFlowSteps_UserAuthorization] FOREIGN KEY([UserAuthorizationKey])
-REFERENCES DbSecurity.[UserAuthorization] ([UserAuthorizationKey])
+REFERENCES [DbSecurity].[UserAuthorization] ([UserAuthorizationKey])
 GO
 ALTER TABLE Process.[WorkflowSteps] CHECK CONSTRAINT [FK_WorkFlowSteps_UserAuthorization]
 GO
@@ -1122,7 +1229,7 @@ GO
 -- Create date: 11/13/23
 -- Description:	Show table of all workflow steps
 -- =============================================
-CREATE PROCEDURE Process.[usp_ShowWorkflowSteps]
+CREATE OR ALTER PROCEDURE Process.[usp_ShowWorkflowSteps]
 AS
 BEGIN
     -- SET NOCOUNT ON added to prevent extra result sets from
@@ -1133,8 +1240,11 @@ BEGIN
 END
 GO
 
--- TrackWorkFlow
-
+/*
+Process.[usp_TrackWorkFlow], is used to insert records into the [WorkflowSteps] table. 
+When a workflow step is initiated, the procedure would be called with the appropriate 
+parameters, and it would log the activity in the table.
+*/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1144,7 +1254,8 @@ GO
 -- Create date: 11/13/23
 -- Description:	Keep track of all workflow steps
 -- =============================================
-CREATE PROCEDURE Process.[usp_TrackWorkFlow]
+
+CREATE OR ALTER PROCEDURE Process.[usp_TrackWorkFlow]
     -- Add the parameters for the stored procedure here
     @WorkflowDescription NVARCHAR(100),
     @WorkFlowStepTableRowCount INT,
@@ -1186,7 +1297,7 @@ GO
 -- Create date: 11/13/23
 -- Description:	Add the foreign keys to the start Schema database
 -- =============================================
-CREATE PROCEDURE [Project2].[AddForeignKeysToStarSchemaData]
+CREATE OR ALTER PROCEDURE [Project2].[AddForeignKeysToStarSchemaData]
     @UserAuthorizationKey INT
 AS
 BEGIN
@@ -1237,51 +1348,51 @@ BEGIN
     ALTER TABLE [CH01-01-Dimension].DimCustomer
     ADD CONSTRAINT FK_DimCustomer_UserAuthorization
         FOREIGN KEY (UserAuthorizationKey)
-        REFERENCES DbSecurity.UserAuthorization (UserAuthorizationKey);
+        REFERENCES [DbSecurity].[UserAuthorization] (UserAuthorizationKey);
     ALTER TABLE [CH01-01-Dimension].DimGender
     ADD CONSTRAINT FK_DimGender_UserAuthorization
         FOREIGN KEY (UserAuthorizationKey)
-        REFERENCES DbSecurity.UserAuthorization (UserAuthorizationKey);
+        REFERENCES [DbSecurity].[UserAuthorization] (UserAuthorizationKey);
     ALTER TABLE [CH01-01-Dimension].DimMaritalStatus
     ADD CONSTRAINT FK_DimMaritalStatus_UserAuthorization
         FOREIGN KEY (UserAuthorizationKey)
-        REFERENCES DbSecurity.UserAuthorization (UserAuthorizationKey);
+        REFERENCES [DbSecurity].[UserAuthorization] (UserAuthorizationKey);
     ALTER TABLE [CH01-01-Dimension].DimOccupation
     ADD CONSTRAINT FK_DimOccupation_UserAuthorization
         FOREIGN KEY (UserAuthorizationKey)
-        REFERENCES DbSecurity.UserAuthorization (UserAuthorizationKey);
+        REFERENCES [DbSecurity].[UserAuthorization] (UserAuthorizationKey);
     ALTER TABLE [CH01-01-Dimension].DimOrderDate
     ADD CONSTRAINT FK_DimOrderDate_UserAuthorization
         FOREIGN KEY (UserAuthorizationKey)
-        REFERENCES DbSecurity.UserAuthorization (UserAuthorizationKey);
+        REFERENCES [DbSecurity].[UserAuthorization] (UserAuthorizationKey);
     ALTER TABLE [CH01-01-Dimension].DimProduct
     ADD CONSTRAINT FK_DimProduct_UserAuthorization
         FOREIGN KEY (UserAuthorizationKey)
-        REFERENCES DbSecurity.UserAuthorization (UserAuthorizationKey);
+        REFERENCES [DbSecurity].[UserAuthorization] (UserAuthorizationKey);
     ALTER TABLE [CH01-01-Dimension].DimProductCategory
     ADD CONSTRAINT FK_DimProductCategory_UserAuthorization
         FOREIGN KEY (UserAuthorizationKey)
-        REFERENCES DbSecurity.UserAuthorization (UserAuthorizationKey);
+        REFERENCES [DbSecurity].[UserAuthorization] (UserAuthorizationKey);
     ALTER TABLE [CH01-01-Dimension].DimProductSubCategory
     ADD CONSTRAINT FK_DimProductSubCategory_UserAuthorization
         FOREIGN KEY (UserAuthorizationKey)
-        REFERENCES DbSecurity.UserAuthorization (UserAuthorizationKey);
+        REFERENCES [DbSecurity].[UserAuthorization] (UserAuthorizationKey);
     ALTER TABLE [CH01-01-Dimension].DimTerritory
     ADD CONSTRAINT FK_DimTerritory_UserAuthorization
         FOREIGN KEY (UserAuthorizationKey)
-        REFERENCES DbSecurity.UserAuthorization (UserAuthorizationKey);
+        REFERENCES [DbSecurity].[UserAuthorization] (UserAuthorizationKey);
     ALTER TABLE [CH01-01-Dimension].SalesManagers
     ADD CONSTRAINT FK_SalesManagers_UserAuthorization
         FOREIGN KEY (UserAuthorizationKey)
-        REFERENCES DbSecurity.UserAuthorization (UserAuthorizationKey);
+        REFERENCES [DbSecurity].[UserAuthorization] (UserAuthorizationKey);
     ALTER TABLE Fact.Data
     ADD CONSTRAINT FK_Data_UserAuthorization
         FOREIGN KEY (UserAuthorizationKey)
-        REFERENCES DbSecurity.UserAuthorization (UserAuthorizationKey);
+        REFERENCES [DbSecurity].[UserAuthorization] (UserAuthorizationKey);
     ALTER TABLE Process.[WorkflowSteps]
     ADD CONSTRAINT FK_WorkFlowSteps_UserAuthorization
         FOREIGN KEY (UserAuthorizationKey)
-        REFERENCES DbSecurity.UserAuthorization (UserAuthorizationKey);
+        REFERENCES [DbSecurity].[UserAuthorization] (UserAuthorizationKey);
 
     DECLARE @WorkFlowStepTableRowCount INT;
     SET @WorkFlowStepTableRowCount = 0;
@@ -1305,7 +1416,7 @@ GO
 -- Create date: 11/13/23
 -- Description:	Drop the foreign keys from the start Schema database
 -- =============================================
-CREATE PROCEDURE [Project2].[DropForeignKeysFromStarSchemaData]
+CREATE OR ALTER PROCEDURE [Project2].[DropForeignKeysFromStarSchemaData]
     @UserAuthorizationKey INT
 AS
 BEGIN
@@ -1361,7 +1472,30 @@ END;
 GO
 
 
---- Load_Data Procedure 
+/*
+Stored Procedure: Project2.[Load_Data]
+
+Description:
+This procedure is responsible for loading data from the staging table [FileUpload].[OriginallyLoadedData]
+into the fact table [Fact].[Data]. It matches staging data with existing dimensions and populates the
+fact table with transactional and dimensional data. It also maintains metadata about the data load,
+such as the responsible user and the timing of data load operations.
+
+Parameters:
+@UserAuthorizationKey - An integer key that identifies the user authorizing the data load operation.
+
+Operations:
+1. Inserts unique records into the fact table using data from the staging table.
+2. Links each record to a user authorization record using the UserAuthorizationKey.
+3. Dynamically creates a view to facilitate easy access and querying of the loaded data.
+4. Logs the data load operation in the Process.[WorkflowSteps] table using the Process.[usp_TrackWorkFlow] stored procedure.
+5. Returns the loaded data for review.
+
+Usage:
+The procedure should be executed when there is a need to refresh the data in the fact table as part
+of regular ETL operations. It ensures that all data handling is audited and associated with a specific user.
+
+*/
 
 SET ANSI_NULLS ON
 GO
@@ -1375,7 +1509,7 @@ GO
 -- DROP PROC IF EXISTS Project2.[Load_Data]
 -- GO
 
-CREATE PROCEDURE Project2.[Load_Data]
+CREATE OR ALTER PROCEDURE Project2.[Load_Data]
     @UserAuthorizationKey INT
 AS
 BEGIN
@@ -1390,7 +1524,7 @@ BEGIN
     DECLARE @StartingDateTime DATETIME2;
     SET @StartingDateTime = SYSDATETIME();
 
-    INSERT INTO [9:15_Group1].[Fact].[Data]
+    INSERT INTO [Fact].[Data]
         (
         SalesKey,
         SalesManagerKey,
@@ -1461,19 +1595,19 @@ BEGIN
     FROM
         [FileUpload].[OriginallyLoadedData] AS OLD LEFT JOIN
         [CH01-01-Dimension].DimProduct AS dp
-                on  dp.ProductName = OLD.ProductName AND
-                    dp.ProductCode = OLD.ProductCode LEFT JOIN
+        on  dp.ProductName = OLD.ProductName AND
+            dp.ProductCode = OLD.ProductCode LEFT JOIN
         [CH01-01-Dimension].DimTerritory AS dt
-                on  dt.TerritoryCountry = OLD.TerritoryCountry AND
-                    dt.TerritoryGroup = OLD.TerritoryGroup AND
-                    dt.TerritoryRegion = OLD.TerritoryRegion INNER JOIN
+        on  dt.TerritoryCountry = OLD.TerritoryCountry AND
+            dt.TerritoryGroup = OLD.TerritoryGroup AND
+            dt.TerritoryRegion = OLD.TerritoryRegion INNER JOIN
         [CH01-01-Dimension].DimCustomer AS dc
-                on  dc.CustomerName = OLD.CustomerName LEFT JOIN
+        on  dc.CustomerName = OLD.CustomerName LEFT JOIN
         [CH01-01-Dimension].SalesManagers AS sm
-                on  sm.SalesManager = OLD.SalesManager and
-                    sm.Category = OLD.ProductSubcategory LEFT JOIN
+        on  sm.SalesManager = OLD.SalesManager and
+            sm.Category = OLD.ProductSubcategory LEFT JOIN
         [CH01-01-Dimension].DimOccupation AS do
-                    on do.Occupation = OLD.Occupation
+        on do.Occupation = OLD.Occupation
 
     --- accompanying view ---
     EXEC ('DROP VIEW IF EXISTS Group1.uvw_FactData');
@@ -1545,7 +1679,7 @@ GO
 -- Create date: 11/13/23
 -- Description:	Fill in the product category table
 -- =============================================
-CREATE PROCEDURE Project2.[Load_DimProductCategory]
+CREATE OR ALTER PROCEDURE Project2.[Load_DimProductCategory]
     @UserAuthorizationKey INT
 AS
 BEGIN
@@ -1613,7 +1747,7 @@ GO
 -- Create date: 11/13/23
 -- Description:	Fill in the product SUBcategory table
 -- =============================================
-CREATE PROCEDURE Project2.[Load_DimProductSubcategory]
+CREATE OR ALTER PROCEDURE Project2.[Load_DimProductSubcategory]
     @UserAuthorizationKey INT
 AS
 BEGIN
@@ -1685,7 +1819,7 @@ GO
 -- Create date: 11/13/2023
 -- Description:	Populate the customer table
 -- =============================================
-CREATE PROCEDURE Project2.[Load_DimCustomer]
+CREATE OR ALTER PROCEDURE Project2.[Load_DimCustomer]
     @UserAuthorizationKey INT
 AS
 BEGIN
@@ -1744,7 +1878,7 @@ GO
 -- Create date: 11/13/2023
 -- Description:	Populate the gender table
 -- =============================================
-CREATE PROCEDURE Project2.[Load_DimGender]
+CREATE OR ALTER PROCEDURE Project2.[Load_DimGender]
     @UserAuthorizationKey INT
 AS
 BEGIN
@@ -1802,7 +1936,7 @@ GO
 -- Create date: 11/13/2023
 -- Description:	Truncate the star schema 
 -- =============================================
-CREATE PROCEDURE Project2.[TruncateStarSchemaData]
+CREATE OR ALTER PROCEDURE Project2.[TruncateStarSchemaData]
     @UserAuthorizationKey int
 
 AS
@@ -1845,6 +1979,7 @@ GO
 
 
 
+
 -- Load_DimMaritalStatus Procedure
 
 
@@ -1859,7 +1994,7 @@ GO
 -- Description:	Populate the marital status table 
 -- =============================================
 
-CREATE PROCEDURE Project2.[Load_DimMaritalStatus]
+CREATE OR ALTER PROCEDURE Project2.[Load_DimMaritalStatus]
     @UserAuthorizationKey INT
 AS
 BEGIN
@@ -1932,7 +2067,7 @@ GO
 -- Description:	Populate the occupation table 
 -- =============================================
 
-CREATE PROCEDURE Project2.[Load_DimOccupation]
+CREATE OR ALTER PROCEDURE Project2.[Load_DimOccupation]
     @UserAuthorizationKey INT
 AS
 BEGIN
@@ -1994,7 +2129,7 @@ GO
 -- Description:	Populate the Territory table 
 -- =============================================
 
-CREATE PROCEDURE Project2.[Load_DimTerritory]
+CREATE OR ALTER PROCEDURE Project2.[Load_DimTerritory]
     @UserAuthorizationKey int
 
 AS
@@ -2059,11 +2194,11 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 -- =============================================
--- Author:		Ahnaf
+-- Author:		Ahnaf Ahmed
 -- Create date: 11/13/2023
 -- Description:	Load the order date information into the table 
 -- =============================================
-CREATE PROCEDURE Project2.[Load_DimOrderDate]
+CREATE OR ALTER PROCEDURE Project2.[Load_DimOrderDate]
     @UserAuthorizationKey INT
 AS
 BEGIN
@@ -2132,12 +2267,12 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 -- =============================================
--- Author:		Ahnaf
+-- Author:		Ahnaf Ahmed
 -- Create date: 11/13/2023
 -- Description:	Load the Sales Manager information into the table 
 -- =============================================
 
-CREATE PROCEDURE Project2.[Load_SalesManagers]
+CREATE OR ALTER PROCEDURE Project2.[Load_SalesManagers]
     @UserAuthorizationKey int
 
 AS
@@ -2200,15 +2335,16 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 -- =============================================
--- Author:		Ahnaf
+-- Author:		Ahnaf Ahmed
 -- Create date: 11/13/2023
 -- Description: Run the DropProcsInCSCI331FinalProject procedure
 -- =============================================
-CREATE procedure Utils.[DropProcsInCSCI331FinalProject] @UserAuthorizationKey INT
+CREATE OR ALTER PROCEDURE Utils.[DropProcsInCSCI331FinalProject]
+    @UserAuthorizationKey INT
 AS
 BEGIN
     SET NOCOUNT ON;
-	DECLARE @StartingDateTime DATETIME2 = SYSDATETIME();
+    DECLARE @StartingDateTime DATETIME2 = SYSDATETIME();
 
     DROP PROC IF EXISTS Project2.Load_SalesManagers;
     DROP PROC IF EXISTS Project2.Load_DimProductSubcategory;
@@ -2223,20 +2359,20 @@ BEGIN
     DROP PROC IF EXISTS Project2.Load_Data;
     DROP PROC IF EXISTS Project2.TruncateStarSchemaData;
     DROP PROC IF EXISTS Project2.LoadStarSchemaData;
-	DROP PROC IF EXISTS Project2.AddForeignKeysToStarSchemaData;
-	DROP PROC IF EXISTS Project2.DropForeignKeysFromStarSchemaData;
-	DROP PROC IF EXISTS Project2.ShowTableStatusRowCount;
+    DROP PROC IF EXISTS Project2.AddForeignKeysToStarSchemaData;
+    DROP PROC IF EXISTS Project2.DropForeignKeysFromStarSchemaData;
+    DROP PROC IF EXISTS Project2.ShowTableStatusRowCount;
 
-	DECLARE @WorkFlowStepTableRowCount INT;
+    DECLARE @WorkFlowStepTableRowCount INT;
     SET @WorkFlowStepTableRowCount = 0;
-	DECLARE @EndingDateTime DATETIME2 = SYSDATETIME();
+    DECLARE @EndingDateTime DATETIME2 = SYSDATETIME();
     EXEC Process.[usp_TrackWorkFlow] 'Drop Procedures',
                                        @WorkFlowStepTableRowCount,
                                        @StartingDateTime,
                                        @EndingDateTime,
                                        @UserAuthorizationKey;
-	
-	DROP PROC IF EXISTS Process.usp_TrackWorkFlow;
+
+    DROP PROC IF EXISTS Process.usp_TrackWorkFlow;
 END;
 GO
 
@@ -2252,7 +2388,7 @@ GO
 -- Create date: 11/13/23
 -- Description:	Populate the product table
 -- =============================================
-CREATE PROCEDURE Project2.[Load_DimProduct]
+CREATE OR ALTER PROCEDURE Project2.[Load_DimProduct]
     @UserAuthorizationKey INT
 AS
 BEGIN
@@ -2343,7 +2479,7 @@ GO
 -- Create date: 11/13/23
 -- Description:	Populate a table to show the status of the row counts
 -- =============================================
-CREATE PROCEDURE Project2.[ShowTableStatusRowCount]
+CREATE OR ALTER PROCEDURE Project2.[ShowTableStatusRowCount]
     @TableStatus VARCHAR(64),
     @UserAuthorizationKey INT
 AS
@@ -2366,7 +2502,7 @@ BEGIN
     DECLARE @WorkFlowStepTableRowCount INT;
     SET @WorkFlowStepTableRowCount = 0;
 
-        SELECT TableStatus = @TableStatus,
+            SELECT TableStatus = @TableStatus,
             TableName = '[CH01-01-Dimension].DimCustomer',
             [Row Count] = COUNT(*)
         FROM [CH01-01-Dimension].[DimCustomer]
@@ -2422,9 +2558,9 @@ BEGIN
         FROM Fact.[Data]
     UNION ALL
         SELECT TableStatus = @TableStatus,
-            TableName = 'DbSecurity.UserAuthorization',
+            TableName = '[DbSecurity].[UserAuthorization]',
             [Row Count] = COUNT(*)
-        FROM DbSecurity.[UserAuthorization]
+        FROM [DbSecurity].[UserAuthorization]
     UNION ALL
         SELECT TableStatus = @TableStatus,
             TableName = 'Process.WorkflowSteps',
@@ -2445,69 +2581,100 @@ GO
 
 -- LoadStarSchemaData Procedure 
 
+/*
+ABOUT THIS PROCEDURE BY CHATGPT
+
+This T-SQL script is for creating a stored procedure named LoadStarSchemaData within a SQL Server database, likely for the 
+purpose of managing and updating a star schema data warehouse structure. Here's a breakdown of what this script does:
+
+ 1. Setting Options:
+    
+    * SET ANSI_NULLS ON: Ensures that the session treats NULL values according to the ANSI SQL standard.
+    * SET QUOTED_IDENTIFIER ON: Allows the use of double quotes to delimit identifiers.
+
+ 2. Creating the Stored Procedure:
+    
+    * CREATE PROCEDURE [Project2].[LoadStarSchemaData]: This line starts the creation of a stored procedure named LoadStarSchemaData 
+    under the schema Project2. It takes an @UserAuthorizationKey as an integer parameter.
+
+ 3. Procedure Body:
+    
+    * SET NOCOUNT ON;: This line stops the message that shows the number of rows affected by a T-SQL statement from being returned.
+    * DECLARE @StartingDateTime DATETIME2: Declares a variable to store the starting time of the procedure execution.
+    * Dropping Foreign Keys: The procedure calls [Project2].[DropForeignKeysFromStarSchemaData] to drop foreign keys before truncating tables. 
+    This is necessary because you cannot truncate a table that has foreign keys referencing it.
+    * Checking Table Status: Executes [Project2].[ShowTableStatusRowCount] to report the row count of tables before truncation.
+    * Truncating Data: Executes [Project2].[TruncateStarSchemaData] to truncate the data in the star schema.
+    * Loading Data: The procedure then loads data into various dimension tables (like product categories, subcategories, product, etc.) 
+    and fact tables using multiple EXEC statements. Each EXEC statement calls a specific procedure to load data into a particular table.
+    * Recreating Foreign Keys: After loading the data, it recreates the foreign keys using [Project2].[AddForeignKeysToStarSchemaData].
+    * Final Steps: It checks the row count again after loading the data, sets an @EndingDateTime variable, and then calls [Process].[usp_TrackWorkFlow] 
+    to track the workflow, passing in various parameters including the start and end times.
+
+ 4. End of Procedure: The script ends with END; to signify the end of the stored procedure and GO to signal the end of a batch of 
+ Transact-SQL statements to the SQL Server.
+
+In summary, this stored procedure is designed to manage the updating of a star schema database by first dropping foreign keys, 
+truncating existing data, loading new data into the dimensional and fact tables, recreating the foreign keys, and logging the 
+workflow process. The use of @UserAuthorizationKey in various places suggests that the procedure includes some form of authorization 
+or tracking mechanism based on the user executing the procedure.
+
+*/
+
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 -- =============================================
--- Author:		YourName
--- Create date: 
--- Description:	
+-- Author:		Aleksandra Georgievska
+-- Create date: 11/14/23
+-- Description:	Procedure runs other stored procedures to populate the data
 -- =============================================
-CREATE PROCEDURE [Project2].[LoadStarSchemaData] @UserAuthorizationKey INT
+CREATE OR ALTER PROCEDURE [Project2].[LoadStarSchemaData]
+    @UserAuthorizationKey INT
 AS
 BEGIN
     SET NOCOUNT ON;
-	    DECLARE @StartingDateTime DATETIME2 = SYSDATETIME();
+    DECLARE @StartingDateTime DATETIME2 = SYSDATETIME();
 
-    --
     --	Drop All of the foreign keys prior to truncating tables in the star schema
- 	--
     EXEC  [Project2].[DropForeignKeysFromStarSchemaData] @UserAuthorizationKey = 1;
-	--
-	--	Check row count before truncation
-	EXEC [Project2].[ShowTableStatusRowCount]
-		@UserAuthorizationKey = 2,  -- Change -1 to the appropriate UserAuthorizationKey
+    --
+    --	Check row count before truncation
+    EXEC [Project2].[ShowTableStatusRowCount] @UserAuthorizationKey = 6,  -- Change -1 to the appropriate UserAuthorizationKey
 		@TableStatus = N'''Pre-truncate of tables'''
-    --
+    
     --	Always truncate the Star Schema Data
-    --
-    EXEC  [Project2].[TruncateStarSchemaData] @UserAuthorizationKey = 1;
-    --
-    --	Load the star schema
-    --
-    EXEC  [Project2].[Load_DimProductCategory] @UserAuthorizationKey = 4;  -- Change -1 to the appropriate UserAuthorizationKey
-    EXEC  [Project2].[Load_DimProductSubcategory] @UserAuthorizationKey = 4;  -- Change -1 to the appropriate UserAuthorizationKey
-    EXEC  [Project2].[Load_DimProduct] @UserAuthorizationKey = 6;  -- Change -1 to the appropriate UserAuthorizationKey
-    EXEC  [Project2].[Load_SalesManagers] @UserAuthorizationKey = 3;  -- Change -1 to the appropriate UserAuthorizationKey
-    EXEC  [Project2].[Load_DimGender] @UserAuthorizationKey = 5;  -- Change -1 to the appropriate UserAuthorizationKey
-    EXEC  [Project2].[Load_DimMaritalStatus] @UserAuthorizationKey = 2;  -- Change -1 to the appropriate UserAuthorizationKey
-    EXEC  [Project2].[Load_DimOccupation] @UserAuthorizationKey = 7;  -- Change -1 to the appropriate UserAuthorizationKey
-    EXEC  [Project2].[Load_DimOrderDate] @UserAuthorizationKey = 7;  -- Change -1 to the appropriate UserAuthorizationKey
-    EXEC  [Project2].[Load_DimTerritory] @UserAuthorizationKey = 3;  -- Change -1 to the appropriate UserAuthorizationKey
-    EXEC  [Project2].[Load_DimCustomer] @UserAuthorizationKey = 5;  -- Change -1 to the appropriate UserAuthorizationKey
-    EXEC  [Project2].[Load_Data] @UserAuthorizationKey = 6;  -- Change -1 to the appropriate UserAuthorizationKey
-  --
-    --	Recreate all of the foreign keys prior after loading the star schema
-    --
- 	--
-	--	Check row count before truncation
-	EXEC	[Project2].[ShowTableStatusRowCount]
-		@UserAuthorizationKey = 2,  -- Change -1 to the appropriate UserAuthorizationKey
-		@TableStatus = N'''Row Count after loading the star schema'''
-	--
-   EXEC [Project2].[AddForeignKeysToStarSchemaData] @UserAuthorizationKey = 1;  -- Change -1 to the appropriate UserAuthorizationKey
-    --
+    EXEC  [Project2].[TruncateStarSchemaData] @UserAuthorizationKey = 3;
 
-	DECLARE @WorkFlowStepTableRowCount INT;
-    SET @WorkFlowStepTableRowCount = 0;
-    DECLARE @EndingDateTime DATETIME2 = SYSDATETIME();
-    EXEC [Process].[usp_TrackWorkFlow] 'Load Star Schema Data',
-                                       @WorkFlowStepTableRowCount,
-                                       @StartingDateTime,
-                                       @EndingDateTime,
-                                       @UserAuthorizationKey;
+    --	Load the star schema
+    /*
+                                            Note: User Authorization keys are hardcoded, each representing a different group user 
+                                                Aleksandra Georgievska → User Key 1
+                                                Sigalita Yakubova → User Key 2
+                                                Nicholas Kong → User Key 3
+                                                Edwin Wray → User Key 4
+                                                Ahnaf Ahmed → User Key 5
+                                                Aryeh Richman → User Key 6
+                                            */
+    EXEC  [Project2].[Load_DimProductCategory] @UserAuthorizationKey = 2;       -- Change -1 to the appropriate UserAuthorizationKey
+    EXEC  [Project2].[Load_DimProductSubcategory] @UserAuthorizationKey = 2;    -- Change -1 to the appropriate UserAuthorizationKey
+    EXEC  [Project2].[Load_DimProduct] @UserAuthorizationKey = 2;               -- Change -1 to the appropriate UserAuthorizationKey
+    EXEC  [Project2].[Load_SalesManagers] @UserAuthorizationKey = 5;            -- Change -1 to the appropriate UserAuthorizationKey
+    EXEC  [Project2].[Load_DimGender] @UserAuthorizationKey = 3;                -- Change -1 to the appropriate UserAuthorizationKey
+    EXEC  [Project2].[Load_DimMaritalStatus] @UserAuthorizationKey = 4;         -- Change -1 to the appropriate UserAuthorizationKey
+    EXEC  [Project2].[Load_DimOccupation] @UserAuthorizationKey = 4;            -- Change -1 to the appropriate UserAuthorizationKey
+    EXEC  [Project2].[Load_DimOrderDate] @UserAuthorizationKey = 5;             -- Change -1 to the appropriate UserAuthorizationKey
+    EXEC  [Project2].[Load_DimTerritory] @UserAuthorizationKey = 4;             -- Change -1 to the appropriate UserAuthorizationKey
+    EXEC  [Project2].[Load_DimCustomer] @UserAuthorizationKey = 3;              -- Change -1 to the appropriate UserAuthorizationKey
+    EXEC  [Project2].[Load_Data] @UserAuthorizationKey = 2;                     -- Change -1 to the appropriate UserAuthorizationKey
+    
+    --	Recreate all of the foreign keys prior after loading the star schema
+    --	Check row count before truncation
+    EXEC	[Project2].[ShowTableStatusRowCount] @UserAuthorizationKey = 6,  -- Change -1 to the appropriate UserAuthorizationKey
+		@TableStatus = N'''Row Count after loading the star schema'''
+    --
+    EXEC [Project2].[AddForeignKeysToStarSchemaData] @UserAuthorizationKey = 1; -- Change -1 to the appropriate UserAuthorizationKey
+--
 END;
 GO
-
-
