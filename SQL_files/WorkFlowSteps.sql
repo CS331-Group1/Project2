@@ -1,4 +1,4 @@
-USE [9:15_Group1]
+USE [G9:15_Group1]
 GO
 
 -- Run the next command to populate the star schema database with all of the data 

@@ -1,7 +1,7 @@
 -- CREATE THE DATABASE
 
-CREATE DATABASE [9:15_Group1];
-GO
+-- CREATE DATABASE [G9:15_Group1];
+-- GO
 
 --------------------- CREATE SCHEMAS -------------------------
 DROP SCHEMA IF EXISTS DbSecurity; 
@@ -14,48 +14,48 @@ GO
 CREATE SCHEMA [CH01-01-Dimension];
 GO
 
-DROP SCHEMA IF EXISTS Fact;
+DROP SCHEMA IF EXISTS [CH01-01-Fact];
 GO
-CREATE SCHEMA Fact;
-GO
-
-DROP SCHEMA IF EXISTS Project2; 
-GO
-CREATE SCHEMA Project2
+CREATE SCHEMA [CH01-01-Fact];
 GO
 
-DROP SCHEMA IF EXISTS Utils; 
+DROP SCHEMA IF EXISTS [Project2]; 
 GO
-CREATE SCHEMA Utils
+CREATE SCHEMA [Project2]
 GO
 
-DROP SCHEMA IF EXISTS FileUpload; 
+DROP SCHEMA IF EXISTS [Utils]; 
 GO
-CREATE SCHEMA FileUpload
+CREATE SCHEMA [Utils]
+GO
+
+DROP SCHEMA IF EXISTS [FileUpload]; 
+GO
+CREATE SCHEMA [FileUpload]
 GO
 
 /* Instructions for use of G9_1 Schema name:
 Part of the design is to create either a view or Inline Table Value function for
 the source input query to load the specific table using your group name as a
 schema name */
-DROP SCHEMA IF EXISTS G9_1; 
+DROP SCHEMA IF EXISTS [G9_1]; 
 GO
-CREATE SCHEMA G9_1
-GO
-
-DROP SCHEMA IF EXISTS PkSequence; 
-GO
-CREATE SCHEMA PkSequence
+CREATE SCHEMA [G9_1]
 GO
 
-DROP SCHEMA IF EXISTS Process; 
+DROP SCHEMA IF EXISTS [PkSequence]; 
 GO
-CREATE SCHEMA Process
+CREATE SCHEMA [PkSequence]
+GO
+
+DROP SCHEMA IF EXISTS [Process]; 
+GO
+CREATE SCHEMA [Process]
 GO
 
 ------------------------- CREATE SEQUENCES ----------------------------
 
--- for replacing identity key in Fact.[Data]
+-- for replacing identity key in [CH01-01-Fact].[Data]
 CREATE SEQUENCE PkSequence.[DataSequenceObject] 
  AS [int]
  START WITH 1
@@ -146,16 +146,41 @@ GO
 
 ------------------------ Utils functions using Script as Create ---------------------
 
+/*
+Function: [Utils].[CalculateDataTypeByteStorage]
 
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+Description:
+This function calculates the storage size in bytes for a given SQL data type. 
+It handles various data types, including varchar, char, int, money, and date. 
+The storage size calculation is based on the data type and its specified length.
+
+Parameters:
+@DataType - A varchar(50) parameter representing the SQL data type whose storage 
+size is to be calculated. The expected format is the data type followed by its 
+length in parentheses (for example, 'varchar(50)').
+
+Returns:
+Int - The function returns an integer value representing the number of bytes required to store a value of the specified data type. For variable-length types like varchar, an additional 2 bytes are added to the specified length to account for storage overhead. For fixed-length types, it returns their standard storage size. If the data type is not recognized, it returns -999.
+
+Usage:
+This function is particularly useful for database sizing and planning. It can be used to estimate the storage requirements for tables based on their schema definitions.
+
+Example:
+SELECT [Utils].[CalculateDataTypeByteStorage] ('varchar(50)');
+This example returns the storage size for a varchar data type with a length of 50 characters.
+
 -- =============================================
 -- Author:		Professor Heller
 -- Create date: default
 -- Description:	Code taken from the 'Script as Create' result of the scalar-Valued Function within the BIClass db
 -- =============================================
+
+*/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
 CREATE FUNCTION [Utils].[CalculateDataTypeByteStorage] 
 (
 	-- Add the parameters for the function here
@@ -199,7 +224,35 @@ GO
 
 ---------------- recreating Util views using Script as Create ---------
 
--- ShowServerUserNameAndCurrentDatabase View
+/*
+View: Utils.[ShowServerUserNameAndCurrentDatabase]
+
+Description:
+This view is designed to quickly provide essential information about the current SQL Server environment. It returns the name of the server on which SQL Server is running, the username of the current user as recognized by the system, and the name of the database currently in use.
+
+Columns:
+- ServerName: The name of the server where SQL Server is installed and running.
+- YourUserName: The username of the current user as recognized by the system. This represents the user context in which the current SQL session is executing.
+- CurrentDatabase: The name of the database that is currently in use by the session.
+
+Usage:
+This view can be particularly useful for users who connect to multiple databases on different servers, especially in environments with complex configurations or multiple instances of SQL Server. It helps quickly identify the current context, which can be crucial for database administrators, developers, and analysts working in multi-database environments.
+
+Example:
+SELECT * FROM Utils.[ShowServerUserNameAndCurrentDatabase];
+
+This example retrieves the server name, the current user's username, and the name of the currently active database.
+
+Note: The information returned by this view reflects the current session's context and may vary depending on the user's connection and selected database.
+
+-- =============================================
+-- Author:		Professor Heller
+-- Create date: default
+-- Description:	Code taken from the 'Script as Create' result of the views within the BIClass db
+-- =============================================
+
+
+*/
 
 SET ANSI_NULLS ON
 GO
@@ -213,7 +266,44 @@ as
  
 GO
 
--- uvw_FindColumnDefinitionPlusDefaultAndCheckConstraint View
+
+/*
+View: [Utils].[uvw_FindColumnDefinitionPlusDefaultAndCheckConstraint]
+
+Description:
+This view provides comprehensive details about column definitions across various tables in the database. It concatenates information from different schema tables to give a detailed overview of each column, including its data type, nullability, default constraints, and check constraints if any. The view fetches data from INFORMATION_SCHEMA and sys schema to compile information about tables, columns, default constraints, and check constraints.
+
+Columns:
+- FullyQualifiedTableName: The schema and table name combined.
+- SchemaName: The name of the schema to which the table belongs.
+- TableName: The name of the table.
+- ColumnName: The name of the column in the table.
+- OrdinalPosition: The ordinal position of the column in the table.
+- FullyQualifiedDomainName: The schema and domain name combined, if any.
+- DomainName: The domain name of the column.
+- DataType: The data type of the column, formatted with length, precision, and scale where applicable.
+- IsNullable: Indicates if the column allows NULL values.
+- DefaultName: The name of the default constraint applied to the column, if any.
+- DefaultNameDefinition: The definition of the default constraint.
+- CheckConstraintRuleName: The name of the check constraint applied to the column, if any.
+- CheckConstraintRuleNameDefinition: The definition of the check constraint.
+
+Usage:
+This view is particularly useful for database administrators and developers who need to quickly retrieve detailed information about the database schema, especially when working with complex databases with many tables and columns. It can be used for schema analysis, documentation, or to aid in database migrations or upgrades.
+
+Example:
+SELECT * FROM [Utils].[uvw_FindColumnDefinitionPlusDefaultAndCheckConstraint]
+WHERE SchemaName = 'MySchema' AND TableName = 'MyTable';
+
+This example retrieves detailed column information for all columns in the 'MyTable' table within the 'MySchema' schema.
+
+-- =============================================
+-- Author:		Professor Heller
+-- Create date: default
+-- Description:	Code taken from the 'Script as Create' result of the views within the BIClass db
+-- =============================================
+
+*/
 
 SET ANSI_NULLS ON
 GO
@@ -315,7 +405,36 @@ AS
 GO
 
 
--- uvw_FindTablesStorageBytes View 
+/*
+View: [Utils].[uvw_FindTablesStorageBytes]
+
+Description:
+This view provides an estimate of the storage size in bytes for each column in tables within specified schemas (schemas starting with 'CH'). It utilizes the [Utils].[uvw_FindColumnDefinitionPlusDefaultAndCheckConstraint] view to retrieve column details and then calculates the storage size based on the data type of each column. The view handles various data types, including varchar, char, int, money, and date, providing an estimate of the storage requirement for each column.
+
+Columns:
+- FullyQualifiedTableName: The combined schema and table name.
+- ColumnName: The name of the column.
+- DataType: The data type of the column.
+- OrdinalPosition: The position of the column in the table.
+- StorageBytes: An estimated storage size for the column in bytes. This estimate includes additional storage requirements for variable-length types.
+
+Usage:
+This view is useful for database sizing and capacity planning. It can be used to estimate the storage requirements for each column in the database's tables, which is particularly beneficial when working with large databases or planning for data growth.
+
+Example:
+SELECT * FROM [Utils].[uvw_FindTablesStorageBytes];
+
+This example retrieves the estimated storage size for each column in tables belonging to schemas that start with 'CH'.
+
+Note: The storage size calculations are estimates and may not reflect the exact storage requirements, especially for variable-length fields and fields with additional storage overhead.
+
+-- =============================================
+-- Author:		Professor Heller
+-- Create date: default
+-- Description:	Code taken from the 'Script as Create' result of the views within the BIClass db
+-- =============================================
+
+*/
 
 SET ANSI_NULLS ON
 GO
@@ -420,7 +539,7 @@ GO
 
 
 -- Migrate the data from the BiClass DB to our group DB
-INSERT INTO [9:15_Group1].[FileUpload].[OriginallyLoadedData]
+INSERT INTO [G9:15_Group1].[FileUpload].[OriginallyLoadedData]
     ([SalesKey], [ProductCategory], [ProductSubcategory], [SalesManager], [ProductCode],
     [ProductName], [Color], [ModelName], [OrderQuantity], [UnitPrice],
     [ProductStandardCost], [SalesAmount], [OrderDate], [MonthName], [MonthNumber],
@@ -479,7 +598,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TABLE Fact.[Data]
+CREATE TABLE [CH01-01-Fact].[Data]
 (
     [SalesKey] [int] NOT NULL,
     [SalesManagerKey] [int] NULL,
@@ -562,7 +681,7 @@ AS
         UserAuthorizationKey,
         DateAdded,
         DateOfLastUpdate
-    FROM Fact.[Data] 
+    FROM [CH01-01-Fact].[Data] 
 GO
 
 -- DimCustomer Table --
@@ -1078,11 +1197,11 @@ ALTER TABLE [CH01-01-Dimension].[SalesManagers] ADD  DEFAULT (sysdatetime()) FOR
 GO
 ALTER TABLE [CH01-01-Dimension].[SalesManagers] ADD  DEFAULT (sysdatetime()) FOR [DateOfLastUpdate]
 GO
-ALTER TABLE Fact.[Data] ADD  DEFAULT (NEXT VALUE FOR PkSequence.[DataSequenceObject]) FOR [SalesKey]
+ALTER TABLE [CH01-01-Fact].[Data] ADD  DEFAULT (NEXT VALUE FOR PkSequence.[DataSequenceObject]) FOR [SalesKey]
 GO
-ALTER TABLE Fact.[Data] ADD  DEFAULT (sysdatetime()) FOR [DateAdded]
+ALTER TABLE [CH01-01-Fact].[Data] ADD  DEFAULT (sysdatetime()) FOR [DateAdded]
 GO
-ALTER TABLE Fact.[Data] ADD  DEFAULT (sysdatetime()) FOR [DateOfLastUpdate]
+ALTER TABLE [CH01-01-Fact].[Data] ADD  DEFAULT (sysdatetime()) FOR [DateOfLastUpdate]
 GO
 ALTER TABLE [DbSecurity].[UserAuthorization] ADD  DEFAULT (NEXT VALUE FOR PkSequence.[UserAuthorizationSequenceObject]) FOR [UserAuthorizationKey]
 GO
@@ -1178,50 +1297,50 @@ REFERENCES [DbSecurity].[UserAuthorization] ([UserAuthorizationKey])
 GO
 ALTER TABLE [CH01-01-Dimension].[SalesManagers] CHECK CONSTRAINT [FK_SalesManagers_UserAuthorization]
 GO
-ALTER TABLE Fact.[Data]  WITH CHECK ADD  CONSTRAINT [FK_Data_DimCustomer] FOREIGN KEY([CustomerKey])
+ALTER TABLE [CH01-01-Fact].[Data]  WITH CHECK ADD  CONSTRAINT [FK_Data_DimCustomer] FOREIGN KEY([CustomerKey])
 REFERENCES [CH01-01-Dimension].[DimCustomer] ([CustomerKey])
 GO
-ALTER TABLE Fact.[Data] CHECK CONSTRAINT [FK_Data_DimCustomer]
+ALTER TABLE [CH01-01-Fact].[Data] CHECK CONSTRAINT [FK_Data_DimCustomer]
 GO
-ALTER TABLE Fact.[Data]  WITH CHECK ADD  CONSTRAINT [FK_Data_DimGender] FOREIGN KEY([Gender])
+ALTER TABLE [CH01-01-Fact].[Data]  WITH CHECK ADD  CONSTRAINT [FK_Data_DimGender] FOREIGN KEY([Gender])
 REFERENCES [CH01-01-Dimension].[DimGender] ([Gender])
 GO
-ALTER TABLE Fact.[Data] CHECK CONSTRAINT [FK_Data_DimGender]
+ALTER TABLE [CH01-01-Fact].[Data] CHECK CONSTRAINT [FK_Data_DimGender]
 GO
-ALTER TABLE Fact.[Data]  WITH CHECK ADD  CONSTRAINT [FK_Data_DimMaritalStatus] FOREIGN KEY([MaritalStatus])
+ALTER TABLE [CH01-01-Fact].[Data]  WITH CHECK ADD  CONSTRAINT [FK_Data_DimMaritalStatus] FOREIGN KEY([MaritalStatus])
 REFERENCES [CH01-01-Dimension].[DimMaritalStatus] ([MaritalStatus])
 GO
-ALTER TABLE Fact.[Data] CHECK CONSTRAINT [FK_Data_DimMaritalStatus]
+ALTER TABLE [CH01-01-Fact].[Data] CHECK CONSTRAINT [FK_Data_DimMaritalStatus]
 GO
-ALTER TABLE Fact.[Data]  WITH CHECK ADD  CONSTRAINT [FK_Data_DimOccupation] FOREIGN KEY([OccupationKey])
+ALTER TABLE [CH01-01-Fact].[Data]  WITH CHECK ADD  CONSTRAINT [FK_Data_DimOccupation] FOREIGN KEY([OccupationKey])
 REFERENCES [CH01-01-Dimension].[DimOccupation] ([OccupationKey])
 GO
-ALTER TABLE Fact.[Data] CHECK CONSTRAINT [FK_Data_DimOccupation]
+ALTER TABLE [CH01-01-Fact].[Data] CHECK CONSTRAINT [FK_Data_DimOccupation]
 GO
-ALTER TABLE Fact.[Data]  WITH CHECK ADD  CONSTRAINT [FK_Data_DimOrderDate] FOREIGN KEY([OrderDate])
+ALTER TABLE [CH01-01-Fact].[Data]  WITH CHECK ADD  CONSTRAINT [FK_Data_DimOrderDate] FOREIGN KEY([OrderDate])
 REFERENCES [CH01-01-Dimension].[DimOrderDate] ([OrderDate])
 GO
-ALTER TABLE Fact.[Data] CHECK CONSTRAINT [FK_Data_DimOrderDate]
+ALTER TABLE [CH01-01-Fact].[Data] CHECK CONSTRAINT [FK_Data_DimOrderDate]
 GO
-ALTER TABLE Fact.[Data]  WITH CHECK ADD  CONSTRAINT [FK_Data_DimProduct] FOREIGN KEY([ProductKey])
+ALTER TABLE [CH01-01-Fact].[Data]  WITH CHECK ADD  CONSTRAINT [FK_Data_DimProduct] FOREIGN KEY([ProductKey])
 REFERENCES [CH01-01-Dimension].[DimProduct] ([ProductKey])
 GO
-ALTER TABLE Fact.[Data] CHECK CONSTRAINT [FK_Data_DimProduct]
+ALTER TABLE [CH01-01-Fact].[Data] CHECK CONSTRAINT [FK_Data_DimProduct]
 GO
-ALTER TABLE Fact.[Data]  WITH CHECK ADD  CONSTRAINT [FK_Data_DimTerritory] FOREIGN KEY([TerritoryKey])
+ALTER TABLE [CH01-01-Fact].[Data]  WITH CHECK ADD  CONSTRAINT [FK_Data_DimTerritory] FOREIGN KEY([TerritoryKey])
 REFERENCES [CH01-01-Dimension].[DimTerritory] ([TerritoryKey])
 GO
-ALTER TABLE Fact.[Data] CHECK CONSTRAINT [FK_Data_DimTerritory]
+ALTER TABLE [CH01-01-Fact].[Data] CHECK CONSTRAINT [FK_Data_DimTerritory]
 GO
-ALTER TABLE Fact.[Data]  WITH CHECK ADD  CONSTRAINT [FK_Data_SalesManagers] FOREIGN KEY([SalesManagerKey])
+ALTER TABLE [CH01-01-Fact].[Data]  WITH CHECK ADD  CONSTRAINT [FK_Data_SalesManagers] FOREIGN KEY([SalesManagerKey])
 REFERENCES [CH01-01-Dimension].[SalesManagers] ([SalesManagerKey])
 GO
-ALTER TABLE Fact.[Data] CHECK CONSTRAINT [FK_Data_SalesManagers]
+ALTER TABLE [CH01-01-Fact].[Data] CHECK CONSTRAINT [FK_Data_SalesManagers]
 GO
-ALTER TABLE Fact.[Data]  WITH CHECK ADD  CONSTRAINT [FK_Data_UserAuthorization] FOREIGN KEY([UserAuthorizationKey])
+ALTER TABLE [CH01-01-Fact].[Data]  WITH CHECK ADD  CONSTRAINT [FK_Data_UserAuthorization] FOREIGN KEY([UserAuthorizationKey])
 REFERENCES [DbSecurity].[UserAuthorization] ([UserAuthorizationKey])
 GO
-ALTER TABLE Fact.[Data] CHECK CONSTRAINT [FK_Data_UserAuthorization]
+ALTER TABLE [CH01-01-Fact].[Data] CHECK CONSTRAINT [FK_Data_UserAuthorization]
 GO
 ALTER TABLE Process.[WorkflowSteps]  WITH CHECK ADD  CONSTRAINT [FK_WorkFlowSteps_UserAuthorization] FOREIGN KEY([UserAuthorizationKey])
 REFERENCES [DbSecurity].[UserAuthorization] ([UserAuthorizationKey])
@@ -1319,35 +1438,35 @@ BEGIN
     -- interfering with SELECT statements.
     DECLARE @StartingDateTime DATETIME2 = SYSDATETIME();
 
-    ALTER TABLE Fact.[Data]
+    ALTER TABLE [CH01-01-Fact].[Data]
     ADD CONSTRAINT FK_Data_DimCustomer
         FOREIGN KEY (CustomerKey)
         REFERENCES [CH01-01-Dimension].DimCustomer (CustomerKey);
-    ALTER TABLE Fact.[Data]
+    ALTER TABLE [CH01-01-Fact].[Data]
     ADD CONSTRAINT FK_Data_DimGender
         FOREIGN KEY (Gender)
         REFERENCES [CH01-01-Dimension].DimGender (Gender);
-    ALTER TABLE Fact.[Data]
+    ALTER TABLE [CH01-01-Fact].[Data]
     ADD CONSTRAINT FK_Data_DimMaritalStatus
         FOREIGN KEY (MaritalStatus)
         REFERENCES [CH01-01-Dimension].DimMaritalStatus (MaritalStatus);
-    ALTER TABLE Fact.[Data]
+    ALTER TABLE [CH01-01-Fact].[Data]
     ADD CONSTRAINT FK_Data_DimOccupation
         FOREIGN KEY (OccupationKey)
         REFERENCES [CH01-01-Dimension].DimOccupation (OccupationKey);
-    ALTER TABLE Fact.[Data]
+    ALTER TABLE [CH01-01-Fact].[Data]
     ADD CONSTRAINT FK_Data_DimOrderDate
         FOREIGN KEY (OrderDate)
         REFERENCES [CH01-01-Dimension].DimOrderDate (OrderDate);
-    ALTER TABLE Fact.[Data]
+    ALTER TABLE [CH01-01-Fact].[Data]
     ADD CONSTRAINT FK_Data_DimProduct
         FOREIGN KEY (ProductKey)
         REFERENCES [CH01-01-Dimension].DimProduct (ProductKey);
-    ALTER TABLE Fact.[Data]
+    ALTER TABLE [CH01-01-Fact].[Data]
     ADD CONSTRAINT FK_Data_DimTerritory
         FOREIGN KEY (TerritoryKey)
         REFERENCES [CH01-01-Dimension].DimTerritory (TerritoryKey);
-    ALTER TABLE Fact.[Data]
+    ALTER TABLE [CH01-01-Fact].[Data]
     ADD CONSTRAINT FK_Data_SalesManagers
         FOREIGN KEY (SalesManagerKey)
         REFERENCES [CH01-01-Dimension].SalesManagers (SalesManagerKey);
@@ -1437,14 +1556,14 @@ BEGIN
     SET NOCOUNT ON;
     DECLARE @StartingDateTime DATETIME2 = SYSDATETIME();
 
-    ALTER TABLE Fact.[Data] DROP CONSTRAINT FK_Data_DimCustomer;
-    ALTER TABLE Fact.[Data] DROP CONSTRAINT FK_Data_DimGender;
-    ALTER TABLE Fact.[Data] DROP CONSTRAINT FK_Data_DimMaritalStatus;
-    ALTER TABLE Fact.[Data] DROP CONSTRAINT FK_Data_DimOccupation;
-    ALTER TABLE Fact.[Data] DROP CONSTRAINT FK_Data_DimOrderDate;
-    ALTER TABLE Fact.[Data] DROP CONSTRAINT FK_Data_DimProduct;
-    ALTER TABLE Fact.[Data] DROP CONSTRAINT FK_Data_DimTerritory;
-    ALTER TABLE Fact.[Data] DROP CONSTRAINT FK_Data_SalesManagers;
+    ALTER TABLE [CH01-01-Fact].[Data] DROP CONSTRAINT FK_Data_DimCustomer;
+    ALTER TABLE [CH01-01-Fact].[Data] DROP CONSTRAINT FK_Data_DimGender;
+    ALTER TABLE [CH01-01-Fact].[Data] DROP CONSTRAINT FK_Data_DimMaritalStatus;
+    ALTER TABLE [CH01-01-Fact].[Data] DROP CONSTRAINT FK_Data_DimOccupation;
+    ALTER TABLE [CH01-01-Fact].[Data] DROP CONSTRAINT FK_Data_DimOrderDate;
+    ALTER TABLE [CH01-01-Fact].[Data] DROP CONSTRAINT FK_Data_DimProduct;
+    ALTER TABLE [CH01-01-Fact].[Data] DROP CONSTRAINT FK_Data_DimTerritory;
+    ALTER TABLE [CH01-01-Fact].[Data] DROP CONSTRAINT FK_Data_SalesManagers;
     ALTER TABLE [CH01-01-Dimension].[DimProduct] DROP CONSTRAINT FK_DimProduct_DimProductSubCategory;
     ALTER TABLE [CH01-01-Dimension].[DimProductSubCategory] DROP CONSTRAINT FK_DimProductSubCategory_DimProductCategory;
     ALTER TABLE [CH01-01-Dimension].DimCustomer DROP CONSTRAINT FK_DimCustomer_UserAuthorization;
@@ -1645,7 +1764,7 @@ BEGIN
 		UserAuthorizationKey,
 		DateAdded,
 		DateOfLastUpdate
-    FROM Fact.[Data]');
+    FROM [CH01-01-Fact].[Data]');
 
 
     DECLARE @EndingDateTime DATETIME2;
@@ -1653,9 +1772,9 @@ BEGIN
 
     DECLARE @WorkFlowStepTableRowCount INT;
     SET @WorkFlowStepTableRowCount = (SELECT COUNT(*)
-    FROM Fact.[Data]);
+    FROM [CH01-01-Fact].[Data]);
 
-    EXEC Process.[usp_TrackWorkFlow] 'Procedure: Project2.[Load_Data] loads data into Fact.[Data]',
+    EXEC Process.[usp_TrackWorkFlow] 'Procedure: Project2.[Load_Data] loads data into [CH01-01-Fact].[Data]',
                                        @WorkFlowStepTableRowCount,
                                        @StartingDateTime,
                                        @EndingDateTime,
@@ -2555,7 +2674,7 @@ BEGIN
         SELECT TableStatus = @TableStatus,
             TableName = '[CH01-01-Fact].[Data]',
             [Row Count] = COUNT(*)
-        FROM Fact.[Data]
+        FROM [CH01-01-Fact].[Data]
     UNION ALL
         SELECT TableStatus = @TableStatus,
             TableName = '[DbSecurity].[UserAuthorization]',
