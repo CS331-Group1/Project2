@@ -34,13 +34,13 @@ GO
 CREATE SCHEMA FileUpload
 GO
 
-/* Instructions for use of Group1 Schema name:
+/* Instructions for use of G9_1 Schema name:
 Part of the design is to create either a view or Inline Table Value function for
 the source input query to load the specific table using your group name as a
 schema name */
-DROP SCHEMA IF EXISTS Group1; 
+DROP SCHEMA IF EXISTS G9_1; 
 GO
-CREATE SCHEMA Group1
+CREATE SCHEMA G9_1
 GO
 
 DROP SCHEMA IF EXISTS PkSequence; 
@@ -437,7 +437,7 @@ FROM [BIClass].[FileUpload].[OriginallyLoadedData];
 
 
 /*
-Table: [Fact].[Data]
+Table: [CH01-01-Fact].[Data]
 
 Description:
 This table serves as the central fact table for the sales data warehouse. It contains transactional 
@@ -527,7 +527,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW Group1.[uvw_FactData]
+CREATE VIEW G9_1.[uvw_FactData]
 AS
     SELECT
         Saleskey,
@@ -591,7 +591,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW Group1.[uvw_DimCustomer]
+CREATE VIEW G9_1.[uvw_DimCustomer]
 AS
     SELECT CustomerKey, CustomerName, UserAuthorizationKey, DateAdded, DateOfLastUpdate
     FROM [CH01-01-Dimension].[DimCustomer] 
@@ -625,7 +625,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW Group1.[uvw_DimGender]
+CREATE VIEW G9_1.[uvw_DimGender]
 AS
     SELECT Gender, GenderDescription, UserAuthorizationKey, DateAdded, DateOfLastUpdate
     FROM [CH01-01-Dimension].[DimGender] 
@@ -659,7 +659,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW Group1.[uvw_DimMaritalStatus]
+CREATE VIEW G9_1.[uvw_DimMaritalStatus]
 AS
     SELECT MaritalStatus, MaritalStatusDescription, UserAuthorizationKey, DateAdded, DateOfLastUpdate
     FROM [CH01-01-Dimension].[DimMaritalStatus] 
@@ -693,7 +693,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW Group1.[uvw_DimOccupation]
+CREATE VIEW G9_1.[uvw_DimOccupation]
 AS
     SELECT OccupationKey, Occupation, UserAuthorizationKey, DateAdded, DateOfLastUpdate
     FROM [CH01-01-Dimension].[DimOccupation] 
@@ -728,7 +728,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW Group1.[uvw_DimOrderDate]
+CREATE VIEW G9_1.[uvw_DimOrderDate]
 AS
     SELECT OrderDate, MonthName, MonthNumber, UserAuthorizationKey, DateAdded, DateOfLastUpdate
     FROM [CH01-01-Dimension].[DimOrderDate] 
@@ -798,7 +798,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW Group1.[uvw_DimProduct]
+CREATE VIEW G9_1.[uvw_DimProduct]
 AS
     SELECT
         ProductKey,
@@ -844,7 +844,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW Group1.[uvw_DimTerritory]
+CREATE VIEW G9_1.[uvw_DimTerritory]
 AS
     SELECT TerritoryKey, TerritoryGroup, TerritoryCountry, TerritoryRegion, UserAuthorizationKey, DateAdded, DateOfLastUpdate
     FROM [CH01-01-Dimension].[DimTerritory] 
@@ -879,7 +879,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW Group1.[uvw_SalesManagers]
+CREATE VIEW G9_1.[uvw_SalesManagers]
 AS
     SELECT SalesManagerKey, SalesManager, Category, Office, UserAuthorizationKey, DateAdded, DateOfLastUpdate
     FROM [CH01-01-Dimension].[SalesManagers] 
@@ -912,7 +912,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW Group1.[uvw_DimProductCategory]
+CREATE VIEW G9_1.[uvw_DimProductCategory]
 AS
     SELECT ProductCategoryKey, ProductCategory, UserAuthorizationKey, DateAdded, DateOfLastUpdate
     FROM [CH01-01-Dimension].[DimProductCategory] 
@@ -945,7 +945,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW Group1.[uvw_DimProductSubCategory]
+CREATE VIEW G9_1.[uvw_DimProductSubCategory]
 AS
     SELECT ProductSubCategoryKey, ProductCategoryKey, ProductSubcategory, UserAuthorizationKey, DateAdded, DateOfLastUpdate
     FROM [CH01-01-Dimension].[DimProductSubCategory] 
@@ -1399,7 +1399,7 @@ BEGIN
     ADD CONSTRAINT FK_SalesManagers_UserAuthorization
         FOREIGN KEY (UserAuthorizationKey)
         REFERENCES [DbSecurity].[UserAuthorization] (UserAuthorizationKey);
-    ALTER TABLE Fact.Data
+    ALTER TABLE [CH01-01-Fact].[Data]
     ADD CONSTRAINT FK_Data_UserAuthorization
         FOREIGN KEY (UserAuthorizationKey)
         REFERENCES [DbSecurity].[UserAuthorization] (UserAuthorizationKey);
@@ -1457,7 +1457,7 @@ BEGIN
     ALTER TABLE [CH01-01-Dimension].DimProductSubCategory DROP CONSTRAINT FK_DimProductSubCategory_UserAuthorization;
     ALTER TABLE [CH01-01-Dimension].DimTerritory DROP CONSTRAINT FK_DimTerritory_UserAuthorization;
     ALTER TABLE [CH01-01-Dimension].SalesManagers DROP CONSTRAINT FK_SalesManagers_UserAuthorization;
-    ALTER TABLE Fact.Data DROP CONSTRAINT FK_Data_UserAuthorization;
+    ALTER TABLE [CH01-01-Fact].[Data] DROP CONSTRAINT FK_Data_UserAuthorization;
     ALTER TABLE Process.[WorkflowSteps] DROP CONSTRAINT FK_WorkFlowSteps_UserAuthorization;
 
     DECLARE @WorkFlowStepTableRowCount INT;
@@ -1477,7 +1477,7 @@ Stored Procedure: Project2.[Load_Data]
 
 Description:
 This procedure is responsible for loading data from the staging table [FileUpload].[OriginallyLoadedData]
-into the fact table [Fact].[Data]. It matches staging data with existing dimensions and populates the
+into the fact table [CH01-01-Fact].[Data]. It matches staging data with existing dimensions and populates the
 fact table with transactional and dimensional data. It also maintains metadata about the data load,
 such as the responsible user and the timing of data load operations.
 
@@ -1524,7 +1524,7 @@ BEGIN
     DECLARE @StartingDateTime DATETIME2;
     SET @StartingDateTime = SYSDATETIME();
 
-    INSERT INTO [Fact].[Data]
+    INSERT INTO [CH01-01-Fact].[Data]
         (
         SalesKey,
         SalesManagerKey,
@@ -1610,8 +1610,8 @@ BEGIN
         on do.Occupation = OLD.Occupation
 
     --- accompanying view ---
-    EXEC ('DROP VIEW IF EXISTS Group1.uvw_FactData');
-    EXEC ('CREATE VIEW Group1.uvw_FactData AS
+    EXEC ('DROP VIEW IF EXISTS G9_1.uvw_FactData');
+    EXEC ('CREATE VIEW G9_1.uvw_FactData AS
     SELECT 
 		Saleskey,
 		SalesManagerKey,
@@ -1663,7 +1663,7 @@ BEGIN
 
 
     SELECT *
-    FROM Group1.uvw_FactData;
+    FROM G9_1.uvw_FactData;
 
 END;
 GO
@@ -1709,8 +1709,8 @@ BEGIN
     FROM FileUpload.OriginallyLoadedData;
 
     --- accompanying view ---
-    EXEC ('DROP VIEW IF EXISTS Group1.uvw_DimProductCategory');
-    EXEC ('CREATE VIEW Group1.uvw_DimProductCategory AS
+    EXEC ('DROP VIEW IF EXISTS G9_1.uvw_DimProductCategory');
+    EXEC ('CREATE VIEW G9_1.uvw_DimProductCategory AS
 	SELECT ProductCategoryKey, ProductCategory, UserAuthorizationKey, DateAdded, DateOfLastUpdate
 	FROM [CH01-01-Dimension].[DimProductCategory] ');
 
@@ -1731,7 +1731,7 @@ BEGIN
                                        @UserAuthorizationKey;
 
     SELECT *
-    FROM Group1.uvw_DimProductCategory;
+    FROM G9_1.uvw_DimProductCategory;
 END;
 GO
 
@@ -1781,8 +1781,8 @@ BEGIN
         ON OLD.[ProductCategory] = DPC.[ProductCategory];
 
     --- accompanying view ---
-    EXEC ('DROP VIEW IF EXISTS Group1.uvw_DimProductSubCategory');
-    EXEC ('CREATE VIEW Group1.uvw_DimProductSubCategory AS
+    EXEC ('DROP VIEW IF EXISTS G9_1.uvw_DimProductSubCategory');
+    EXEC ('CREATE VIEW G9_1.uvw_DimProductSubCategory AS
     SELECT ProductSubCategoryKey, ProductCategoryKey, ProductSubcategory, UserAuthorizationKey, DateAdded, DateOfLastUpdate
     FROM [CH01-01-Dimension].[DimProductSubCategory] ');
 
@@ -1803,7 +1803,7 @@ BEGIN
                                        @UserAuthorizationKey;
 
     SELECT *
-    FROM Group1.uvw_DimProductSubCategory;
+    FROM G9_1.uvw_DimProductSubCategory;
 
 END;
 GO
@@ -1844,8 +1844,8 @@ BEGIN
 
 
     --- accompanying view ---
-    EXEC('DROP VIEW IF EXISTS Group1.uvw_DimCustomer')
-    EXEC('CREATE VIEW Group1.uvw_DimCustomer AS
+    EXEC('DROP VIEW IF EXISTS G9_1.uvw_DimCustomer')
+    EXEC('CREATE VIEW G9_1.uvw_DimCustomer AS
     SELECT CustomerKey, CustomerName, UserAuthorizationKey, DateAdded, DateOfLastUpdate
     FROM [CH01-01-Dimension].[DimCustomer]')
 
@@ -1863,7 +1863,7 @@ BEGIN
         @EndingDateTime,
         @UserAuthorizationKey
 
-    EXEC('SELECT * FROM Group1.uvw_DimCustomer')
+    EXEC('SELECT * FROM G9_1.uvw_DimCustomer')
 END
 GO
 
@@ -1902,8 +1902,8 @@ BEGIN
 
 
     --- accompanying view ---
-    EXEC('DROP VIEW IF EXISTS Group1.uvw_DimGender')
-    EXEC('CREATE VIEW Group1.uvw_DimGender AS
+    EXEC('DROP VIEW IF EXISTS G9_1.uvw_DimGender')
+    EXEC('CREATE VIEW G9_1.uvw_DimGender AS
     SELECT Gender, GenderDescription, UserAuthorizationKey, DateAdded, DateOfLastUpdate
     FROM [CH01-01-Dimension].[DimGender]')
 
@@ -1921,7 +1921,7 @@ BEGIN
         @EndingDateTime,
         @UserAuthorizationKey
 
-    EXEC('SELECT * FROM Group1.uvw_DimGender')
+    EXEC('SELECT * FROM G9_1.uvw_DimGender')
 END;
 GO
 
@@ -1963,7 +1963,7 @@ BEGIN
     ALTER SEQUENCE PkSequence.DimTerritorySequenceObject RESTART WITH 1;
     TRUNCATE TABLE [CH01-01-Dimension].SalesManagers;
     ALTER SEQUENCE PkSequence.SalesManagersSequenceObject RESTART WITH 1;
-    TRUNCATE TABLE Fact.Data;
+    TRUNCATE TABLE [CH01-01-Fact].[Data];
     ALTER SEQUENCE PkSequence.DataSequenceObject RESTART WITH 1;
 
     DECLARE @WorkFlowStepTableRowCount INT;
@@ -2031,8 +2031,8 @@ BEGIN
     FROM FileUpload.OriginallyLoadedData AS OLD;
 
 
-    EXEC ('DROP VIEW IF EXISTS Group1.uvw_DimMaritalStatus');
-    EXEC ('CREATE VIEW Group1.uvw_DimMaritalStatus AS
+    EXEC ('DROP VIEW IF EXISTS G9_1.uvw_DimMaritalStatus');
+    EXEC ('CREATE VIEW G9_1.uvw_DimMaritalStatus AS
     SELECT MaritalStatus, MaritalStatusDescription, UserAuthorizationKey, DateAdded, DateOfLastUpdate
     FROM [CH01-01-Dimension].[DimMaritalStatus]');
 
@@ -2050,7 +2050,7 @@ BEGIN
                                        @EndingDateTime,
                                        @UserAuthorizationKey;
     SELECT *
-    FROM Group1.uvw_DimMaritalStatus;
+    FROM G9_1.uvw_DimMaritalStatus;
 END;
 GO
 
@@ -2091,8 +2091,8 @@ BEGIN
 
 
     --- accompanying view ---
-    EXEC('DROP VIEW IF EXISTS Group1.uvw_DimOccupation')
-    EXEC('CREATE VIEW Group1.uvw_DimOccupation AS
+    EXEC('DROP VIEW IF EXISTS G9_1.uvw_DimOccupation')
+    EXEC('CREATE VIEW G9_1.uvw_DimOccupation AS
 	SELECT OccupationKey,Occupation,UserAuthorizationKey,DateAdded,DateOfLastUpdate
 	FROM [CH01-01-Dimension].[DimOccupation]')
 
@@ -2112,7 +2112,7 @@ BEGIN
         @UserAuthorizationKey
 
     SELECT *
-    FROM Group1.uvw_DimOccupation
+    FROM G9_1.uvw_DimOccupation
 END
 GO
 
@@ -2168,8 +2168,8 @@ BEGIN
     SET @WorkFlowStepTableRowCount = (SELECT COUNT(*)
     FROM [CH01-01-Dimension].DimTerritory);
 
-    EXEC('DROP VIEW IF EXISTS Group1.uvw_DimTerritory')
-    EXEC('CREATE VIEW Group1.uvw_DimTerritory AS
+    EXEC('DROP VIEW IF EXISTS G9_1.uvw_DimTerritory')
+    EXEC('CREATE VIEW G9_1.uvw_DimTerritory AS
     SELECT TerritoryKey, TerritoryGroup, TerritoryCountry, TerritoryRegion, UserAuthorizationKey, DateAdded, DateOfLastUpdate
     FROM [CH01-01-Dimension].[DimTerritory] ')
 
@@ -2181,7 +2181,7 @@ BEGIN
         @UserAuthorizationKey
 
     SELECT *
-    FROM Group1.uvw_DimTerritory
+    FROM G9_1.uvw_DimTerritory
 END
 GO
 
@@ -2234,8 +2234,8 @@ BEGIN
     FROM FileUpload.OriginallyLoadedData as A
 
     --- accompanying view ---
-    EXEC('DROP VIEW IF EXISTS Group1.uvw_DimOrderDate')
-    EXEC('CREATE VIEW Group1.uvw_DimOrderDate AS
+    EXEC('DROP VIEW IF EXISTS G9_1.uvw_DimOrderDate')
+    EXEC('CREATE VIEW G9_1.uvw_DimOrderDate AS
 	SELECT OrderDate, MonthName, MonthNumber, UserAuthorizationKey, DateAdded, DateOfLastUpdate
 	FROM [CH01-01-Dimension].[DimOrderDate]')
 
@@ -2254,7 +2254,7 @@ BEGIN
         @UserAuthorizationKey
 
     SELECT *
-    FROM Group1.uvw_DimOrderDate
+    FROM G9_1.uvw_DimOrderDate
 END
 GO
 
@@ -2303,8 +2303,8 @@ BEGIN
     FROM FileUpload.OriginallyLoadedData AS OLD
 
     --- accompanying view ---
-    EXEC('DROP VIEW IF EXISTS Group1.uvw_SalesManagers')
-    EXEC('CREATE VIEW Group1.uvw_SalesManagers AS
+    EXEC('DROP VIEW IF EXISTS G9_1.uvw_SalesManagers')
+    EXEC('CREATE VIEW G9_1.uvw_SalesManagers AS
     SELECT SalesManagerKey, SalesManager, Category, Office, UserAuthorizationKey, DateAdded, DateOfLastUpdate
     FROM [CH01-01-Dimension].[SalesManagers] ')
 
@@ -2323,7 +2323,7 @@ BEGIN
         @UserAuthorizationKey
 
     SELECT *
-    FROM Group1.uvw_SalesManagers
+    FROM G9_1.uvw_SalesManagers
 END;
 GO
 
@@ -2432,8 +2432,8 @@ BEGIN
         ON OLD.[ProductSubcategory] = DPSC.[ProductSubcategory];
 
     --- accompanying view ---
-    EXEC ('DROP VIEW IF EXISTS Group1.uvw_DimProduct');
-    EXEC ('CREATE VIEW Group1.uvw_DimProduct AS
+    EXEC ('DROP VIEW IF EXISTS G9_1.uvw_DimProduct');
+    EXEC ('CREATE VIEW G9_1.uvw_DimProduct AS
     SELECT 
 		ProductKey,
 		ProductSubcategoryKey,
@@ -2462,7 +2462,7 @@ BEGIN
                                        @UserAuthorizationKey;
 
     SELECT *
-    FROM Group1.uvw_DimProduct;
+    FROM G9_1.uvw_DimProduct;
 
 END;
 GO
@@ -2553,7 +2553,7 @@ BEGIN
         FROM [CH01-01-Dimension].[SalesManagers]
     UNION ALL
         SELECT TableStatus = @TableStatus,
-            TableName = 'Fact.Data',
+            TableName = '[CH01-01-Fact].[Data]',
             [Row Count] = COUNT(*)
         FROM Fact.[Data]
     UNION ALL
