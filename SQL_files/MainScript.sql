@@ -1104,6 +1104,20 @@ ALTER TABLE Process.[WorkflowSteps] ADD  DEFAULT (sysdatetime()) FOR [EndingDate
 GO
 ALTER TABLE Process.[WorkflowSteps] ADD  DEFAULT ('9:15') FOR [Class Time]
 GO
+
+INSERT INTO [DbSecurity].[UserAuthorization]
+([GroupMemberLastName],[GroupMemberFirstName])
+VALUES
+
+        ('Georgievska','Aleksandra'),
+        ('Yakubova','Sigalita'),
+        ('Kong','Nicholas'),
+        ('Wray','Edwin'),
+        ('Ahmed','Ahnaf'),
+        ('Richman','Aryeh');
+GO
+
+
 ALTER TABLE [CH01-01-Dimension].[DimCustomer]  WITH CHECK ADD  CONSTRAINT [FK_DimCustomer_UserAuthorization] FOREIGN KEY([UserAuthorizationKey])
 REFERENCES [DbSecurity].[UserAuthorization] ([UserAuthorizationKey])
 GO
@@ -1425,40 +1439,26 @@ BEGIN
 
     ALTER TABLE Fact.[Data] DROP CONSTRAINT FK_Data_DimCustomer;
     ALTER TABLE Fact.[Data] DROP CONSTRAINT FK_Data_DimGender;
-    ALTER TABLE Fact.[Data]
-    DROP CONSTRAINT FK_Data_DimMaritalStatus;
+    ALTER TABLE Fact.[Data] DROP CONSTRAINT FK_Data_DimMaritalStatus;
     ALTER TABLE Fact.[Data] DROP CONSTRAINT FK_Data_DimOccupation;
     ALTER TABLE Fact.[Data] DROP CONSTRAINT FK_Data_DimOrderDate;
     ALTER TABLE Fact.[Data] DROP CONSTRAINT FK_Data_DimProduct;
     ALTER TABLE Fact.[Data] DROP CONSTRAINT FK_Data_DimTerritory;
     ALTER TABLE Fact.[Data] DROP CONSTRAINT FK_Data_SalesManagers;
-    ALTER TABLE [CH01-01-Dimension].[DimProduct]
-    DROP CONSTRAINT FK_DimProduct_DimProductSubCategory;
-    ALTER TABLE [CH01-01-Dimension].[DimProductSubCategory]
-    DROP CONSTRAINT FK_DimProductSubCategory_DimProductCategory;
-    ALTER TABLE [CH01-01-Dimension].DimCustomer
-    DROP CONSTRAINT FK_DimCustomer_UserAuthorization;
-    ALTER TABLE [CH01-01-Dimension].DimGender
-    DROP CONSTRAINT FK_DimGender_UserAuthorization;
-    ALTER TABLE [CH01-01-Dimension].DimMaritalStatus
-    DROP CONSTRAINT FK_DimMaritalStatus_UserAuthorization;
-    ALTER TABLE [CH01-01-Dimension].DimOccupation
-    DROP CONSTRAINT FK_DimOccupation_UserAuthorization;
-    ALTER TABLE [CH01-01-Dimension].DimOrderDate
-    DROP CONSTRAINT FK_DimOrderDate_UserAuthorization;
-    ALTER TABLE [CH01-01-Dimension].DimProduct
-    DROP CONSTRAINT FK_DimProduct_UserAuthorization;
-    ALTER TABLE [CH01-01-Dimension].DimProductCategory
-    DROP CONSTRAINT FK_DimProductCategory_UserAuthorization;
-    ALTER TABLE [CH01-01-Dimension].DimProductSubCategory
-    DROP CONSTRAINT FK_DimProductSubCategory_UserAuthorization;
-    ALTER TABLE [CH01-01-Dimension].DimTerritory
-    DROP CONSTRAINT FK_DimTerritory_UserAuthorization;
-    ALTER TABLE [CH01-01-Dimension].SalesManagers
-    DROP CONSTRAINT FK_SalesManagers_UserAuthorization;
+    ALTER TABLE [CH01-01-Dimension].[DimProduct] DROP CONSTRAINT FK_DimProduct_DimProductSubCategory;
+    ALTER TABLE [CH01-01-Dimension].[DimProductSubCategory] DROP CONSTRAINT FK_DimProductSubCategory_DimProductCategory;
+    ALTER TABLE [CH01-01-Dimension].DimCustomer DROP CONSTRAINT FK_DimCustomer_UserAuthorization;
+    ALTER TABLE [CH01-01-Dimension].DimGender DROP CONSTRAINT FK_DimGender_UserAuthorization;
+    ALTER TABLE [CH01-01-Dimension].DimMaritalStatus DROP CONSTRAINT FK_DimMaritalStatus_UserAuthorization;
+    ALTER TABLE [CH01-01-Dimension].DimOccupation DROP CONSTRAINT FK_DimOccupation_UserAuthorization;
+    ALTER TABLE [CH01-01-Dimension].DimOrderDate DROP CONSTRAINT FK_DimOrderDate_UserAuthorization;
+    ALTER TABLE [CH01-01-Dimension].DimProduct DROP CONSTRAINT FK_DimProduct_UserAuthorization;
+    ALTER TABLE [CH01-01-Dimension].DimProductCategory DROP CONSTRAINT FK_DimProductCategory_UserAuthorization;
+    ALTER TABLE [CH01-01-Dimension].DimProductSubCategory DROP CONSTRAINT FK_DimProductSubCategory_UserAuthorization;
+    ALTER TABLE [CH01-01-Dimension].DimTerritory DROP CONSTRAINT FK_DimTerritory_UserAuthorization;
+    ALTER TABLE [CH01-01-Dimension].SalesManagers DROP CONSTRAINT FK_SalesManagers_UserAuthorization;
     ALTER TABLE Fact.Data DROP CONSTRAINT FK_Data_UserAuthorization;
-    ALTER TABLE Process.[WorkflowSteps]
-    DROP CONSTRAINT FK_WorkFlowSteps_UserAuthorization;
+    ALTER TABLE Process.[WorkflowSteps] DROP CONSTRAINT FK_WorkFlowSteps_UserAuthorization;
 
     DECLARE @WorkFlowStepTableRowCount INT;
     SET @WorkFlowStepTableRowCount = 0;
@@ -2659,7 +2659,7 @@ BEGIN
                                             */
     EXEC  [Project2].[Load_DimProductCategory] @UserAuthorizationKey = 2;       -- Change -1 to the appropriate UserAuthorizationKey
     EXEC  [Project2].[Load_DimProductSubcategory] @UserAuthorizationKey = 2;    -- Change -1 to the appropriate UserAuthorizationKey
-    EXEC  [Project2].[Load_DimProduct] @UserAuthorizationKey = 2;               -- Change -1 to the appropriate UserAuthorizationKey
+    EXEC  [Project2].[Load_DimProduct] @UserAuthorizationKey = 6;               -- Change -1 to the appropriate UserAuthorizationKey
     EXEC  [Project2].[Load_SalesManagers] @UserAuthorizationKey = 5;            -- Change -1 to the appropriate UserAuthorizationKey
     EXEC  [Project2].[Load_DimGender] @UserAuthorizationKey = 3;                -- Change -1 to the appropriate UserAuthorizationKey
     EXEC  [Project2].[Load_DimMaritalStatus] @UserAuthorizationKey = 4;         -- Change -1 to the appropriate UserAuthorizationKey
